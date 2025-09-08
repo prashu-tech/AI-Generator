@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Mic, MicOff, Download, Copy, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '../sidebar/Sidebar.js';
+import Sidebar from '../sidebar/sidebar';
 // 🔥 NEW: Error handling imports
-import { ToastManager } from '../ui/Toast.jsx';
+import { ToastManager } from '../ui/Toast';
 import { useToast } from '../../hooks/useToast.js';
 import { handleApiError, getUserFriendlyError } from '../../utils/errorHandler.js';
 
@@ -186,7 +186,7 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
   const recognition = useRef(null);
 
   // Backend URL
-  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
   // 🔥 EXISTING: Sign out handler (unchanged)
   const handleSignOut = () => {
