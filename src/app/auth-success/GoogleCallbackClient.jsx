@@ -1,3 +1,5 @@
+'use client'
+
 // hooks/useToast.js
 import { useState, useCallback } from 'react';
 
