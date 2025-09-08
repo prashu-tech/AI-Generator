@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Mic, MicOff, Download, Copy, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '../sidebar/Sidebar.jsx';
+import Sidebar from '../sidebar/Sidebar';
 // 🔥 NEW: Error handling imports
-import { ToastManager } from '../ui/Toast.jsx';
+import { ToastManager } from '../ui/Toast';
 import { useToast } from '../../hooks/useToast.js';
 import { handleApiError, getUserFriendlyError } from '../../utils/errorHandler.js';
 
