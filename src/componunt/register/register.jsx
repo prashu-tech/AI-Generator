@@ -37,6 +37,10 @@ export default function RegisterPage() {
     return re.test(email);
   };
 
+
+  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+
 // 1. Request OTP
 const handleEmailSubmit = async (e) => {
   e.preventDefault();
@@ -51,7 +55,7 @@ const handleEmailSubmit = async (e) => {
 
   try {
     const response = await fetch(
-      "http://localhost:4000/api/v1/email/initiateEmailVerification",
+      `${BACKEND_URL}/api/v1/email/initiateEmailVerification`,
       {
         method: "POST",
         headers: {
@@ -87,7 +91,7 @@ const handleOtpSubmit = async (e) => {
 
   try {
     const response = await fetch(
-      "http://localhost:4000/api/v1/email/verifyEmailOTP",
+      `${BACKEND_URL}/api/v1/email/verifyEmailOTP`,
       {
         method: "POST",
         headers: {
@@ -151,7 +155,7 @@ if (!tokenToSend) {
 }
   try {
     const response = await fetch(
-      "http://localhost:4000/api/v1/email/completeRegistration",
+      `${BACKEND_URL}/api/v1/email/completeRegistration`,
       {
         method: "POST",
         headers: {
