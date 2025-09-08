@@ -1,47 +1,26 @@
-'use client'
+"use client";
 
-// hooks/useToast.js
-import { useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
-export const useToast = () => {
-  const [toasts, setToasts] = useState([]);
+export default function GoogleCallbackPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const addToast = useCallback((message, type = 'error', duration = 5000) => {
-    const id = Date.now() + Math.random();
-    const newToast = { id, message, type, duration };
-    
-    setToasts(prev => [...prev, newToast]);
-    
-    return id;
-  }, []);
+  useEffect(() => {
+    const accessToken = searchParams.get("accessToken");
+    const refreshToken = searchParams.get("refreshToken");
+    const user = searchParams.get("user");
 
-  const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
+    if (accessToken) {
+      localStorage.setItem("accessToken", accessToken);
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+      if (user) localStorage.setItem("user", user);
+      router.push("/dashboard");
+    } else {
+      router.push("/login?error=google_failed");
+    }
+  }, [router, searchParams]);
 
-  const showError = useCallback((message, duration = 6000) => {
-    return addToast(message, 'error', duration);
-  }, [addToast]);
-
-  const showSuccess = useCallback((message, duration = 4000) => {
-    return addToast(message, 'success', duration);
-  }, [addToast]);
-
-  const showWarning = useCallback((message, duration = 5000) => {
-    return addToast(message, 'warning', duration);
-  }, [addToast]);
-
-  const showInfo = useCallback((message, duration = 4000) => {
-    return addToast(message, 'info', duration);
-  }, [addToast]);
-
-  return {
-    toasts,
-    addToast,
-    removeToast,
-    showError,
-    showSuccess,
-    showWarning,
-    showInfo
-  };
-};
+  return <p>Signing you in with Google...</p>;
+}
