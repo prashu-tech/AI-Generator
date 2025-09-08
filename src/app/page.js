@@ -1,10 +1,6 @@
-import React from 'react'
+// app/page.js
+import { redirect } from 'next/navigation';
 
-function page() {
-  return (
-    <div>
-    </div>
-  )
+export default function Home() {
+  redirect('/register');
 }
-
-export default page
