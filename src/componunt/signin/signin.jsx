@@ -22,96 +22,128 @@ export default function LoginPage() {
     return re.test(email);
   };
 
-  // 🔥 UPDATED: Connected to your backend signin API
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrors({});
-
-    if (!validateEmail(email)) {
-      setErrors({ email: 'Please enter a valid email address' });
-      setIsLoading(false);
-      return;
-    }
-
-    if (password.length < 8) {
-      setErrors({ password: 'Password must be at least 8 characters' });
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // 🔥 CHANGED: Using your new auth endpoint with rememberMe
-      const response = await fetch("http://localhost:4000/api/v1/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, rememberMe }), // 🔥 Added rememberMe
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        // Store tokens and user data
-        localStorage.setItem("accessToken", result.accessToken);
-        localStorage.setItem("refreshToken", result.refreshToken);
-        localStorage.setItem("user", JSON.stringify(result.user));
-        
-        // 🔥 NEW: Store Remember Me preference
-        if (rememberMe) {
-          localStorage.setItem("rememberMe", "true");
-        } else {
-          localStorage.removeItem("rememberMe");
-        }
-        
-        router.push("/dashboard");
-      } else {
-        setErrors({ general: result.message || "Login failed. Please check your credentials." });
-      }
-    } catch (error) {
-      setErrors({ general: "Login failed. Please check your credentials." });
-    } finally {
-      setIsLoading(false);
-    }
+    // 🔥 ADD THIS: Define the getBaseURL function
+  const getBaseURL = () => {
+    return process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:4000'
+      : 'https://ai-generator-backend-rlc5.onrender.com';
   };
+
+  // 🔥 UPDATED: Connected to your backend signin API
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setErrors({});
+
+  if (!validateEmail(email)) {
+    setErrors({ email: 'Please enter a valid email address' });
+    setIsLoading(false);
+    return;
+  }
+
+  if (password.length < 8) {
+    setErrors({ password: 'Password must be at least 8 characters' });
+    setIsLoading(false);
+    return;
+  }
+
+  // 🔥 CHANGE #1: Replace 'URL' with 'BASE_URL'
+  const BASE_URL = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:4000'
+    : 'https://ai-generator-backend-rlc5.onrender.com';
+
+  // Keep your debugging
+  console.log('Environment variables:', {
+    NODE_ENV: process.env.NODE_ENV,
+    BASE_URL: BASE_URL  // 🔥 CHANGE #2: Update variable name in console log
+  });
+
+  try {
+    // 🔥 CHANGE #3: Use BASE_URL instead of URL in fetch
+    const response = await fetch(`${BASE_URL}/api/v1/email/signin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, rememberMe }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      // Store tokens and user data
+      localStorage.setItem("accessToken", result.accessToken);
+      localStorage.setItem("refreshToken", result.refreshToken);
+      localStorage.setItem("user", JSON.stringify(result.user));
+      
+      // Store Remember Me preference
+      if (rememberMe) {
+        localStorage.setItem("rememberMe", "true");
+      } else {
+        localStorage.removeItem("rememberMe");
+      }
+      
+      router.push("/dashboard");
+    } else {
+      setErrors({ general: result.message || "Login failed. Please check your credentials." });
+    }
+  } catch (error) {
+    setErrors({ general: "Login failed. Please check your credentials." });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // 🔥 UPDATED: Connected to your backend forgot password API
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrors({});
+const handleForgotPassword = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setErrors({});
 
-    if (!validateEmail(email)) {
-      setErrors({ email: 'Please enter a valid email address' });
-      setIsLoading(false);
-      return;
+  if (!validateEmail(email)) {
+    setErrors({ email: 'Please enter a valid email address' });
+    setIsLoading(false);
+    return;
+  }
+
+  const BASE_URL = getBaseURL(); // 🔥 CHANGED: Use BASE_URL instead of URL
+
+  try {
+    console.log('🔥 Making forgot password request to:', `${BASE_URL}/api/v1/authRoutes/forgot-password`);
+    
+    const response = await fetch(`${BASE_URL}/api/v1/authRoutes/forgot-password`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    console.log('🔥 Response status:', response.status);
+    const result = await response.json();
+    console.log('🔥 Response data:', result);
+    
+    if (response.ok && result.success) {
+      setErrors({ general: result.message }); // Shows success message
+      setEmail(''); // Clear email field
+    } else {
+      setErrors({ general: result.message || 'Failed to send reset email' });
     }
+  } catch (error) {
+    console.error('🔥 Network error:', error);
+    setErrors({ general: 'Failed to send reset email. Please try again.' });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    try {
-      // 🔥 CHANGED: Using your real forgot password endpoint
-      const response = await fetch("http://localhost:4000/api/v1/authRoutes/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
 
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        setErrors({ general: result.message }); // Shows in green
-        setEmail(''); // Clear email field
-      } else {
-        setErrors({ general: result.message || 'Failed to send reset email' });
-      }
-    } catch (error) {
-      setErrors({ general: 'Failed to send reset email. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+const handleGoogleRedirect = () => {
+  const BASE_URL = getBaseURL(); // 🔥 CHANGE THIS LINE
+  console.log('🔥 Redirecting to Google OAuth:', `${BASE_URL}/auth/google`);
+  window.location.href = `${BASE_URL}/auth/google`;
+};
 
-  const handleGoogleRedirect = () => {
-    window.location.href = "http://localhost:4000/auth/google";
-  };
 
   return (
     <div className="min-h-screen  flex items-center justify-center bg-gradient-to-br from-indigo-600 to-pink-500 relative overflow-hidden">

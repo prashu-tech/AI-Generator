@@ -3,7 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Menu, X, Sparkles, User, LogOut, Settings, Trash2, Clock, MessageCircle, ChevronDown } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api/v1';
+// Get API base URL from environment variable
+const getApiUrl = () => {
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api/v1';
+};
 
 async function fetchConversationsFromDB({ after, limit = 20 }) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -11,43 +14,72 @@ async function fetchConversationsFromDB({ after, limit = 20 }) {
   qs.set('limit', String(limit));
   if (after) qs.set('after', after);
 
-  const res = await fetch(`${API_BASE}/conversations?${qs.toString()}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
-    credentials: 'include'
-  });
+  try {
+    const res = await fetch(`${getApiUrl()}/conversations?${qs.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      // credentials: 'include'
+    });
 
-  // Gracefully handle non-JSON errors
-  const text = await res.text();
-  let json;
-  try { json = JSON.parse(text); } catch {
-    throw new Error(`Failed to load conversations (${res.status})`);
+    // Handle response
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Expected JSON response');
+    }
+
+    const json = await res.json();
+    
+    if (!json.success) {
+      throw new Error(json.message || 'Failed to load conversations');
+    }
+    
+    return json; // { success: true, conversations: [], paging: { nextCursor } }
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    throw new Error(error.message || 'Failed to load conversations');
   }
-  if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load conversations');
-  return json; // { success:true, conversations:[], paging:{nextCursor} }
 }
 
 async function deleteConversationFromDB(sessionId) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  const res = await fetch(`${API_BASE}/conversations/${sessionId}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
-    credentials: 'include'
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || !json.success) throw new Error(json.message || 'Failed to delete conversation');
-  return json;
+  
+  try {
+    const res = await fetch(`${getApiUrl()}/conversations/${sessionId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const json = await res.json();
+    
+    if (!json.success) {
+      throw new Error(json.message || 'Failed to delete conversation');
+    }
+    
+    return json;
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    throw new Error(error.message || 'Failed to delete conversation');
+  }
 }
 
 const Sidebar = ({
   sidebarOpen,
   setSidebarOpen,
-  // conversations (no longer required as source; will be ignored if present)
   currentSessionId,
   startNewConversation,
   imageSettings,
@@ -55,74 +87,117 @@ const Sidebar = ({
   activeTab,
   setActiveTab,
   handleSignOut,
-  loadConversation,     // will still be called when user selects a conversation
-  deleteConversation    // optional: if not provided, this component will call API itself
+  loadConversation,
+  deleteConversation
 }) => {
   const [showSettings, setShowSettings] = useState(false);
 
-  // Local state now sourced from DB instead of props
-  const [list, setList] = useState([]);            // [{sessionId,title,lastMessage,lastActivity,messageCount,hasImage}]
+  // Local state for conversations
+  const [list, setList] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
 
-  // Load from DB on first mount (and when sidebar is opened for the first time)
+  // Load conversations on mount
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    
+    const loadInitialConversations = async () => {
+      if (!sidebarOpen) return; // Only load when sidebar is open
+      
       setLoading(true);
       setError('');
+      
       try {
         const resp = await fetchConversationsFromDB({ limit: 20 });
+        
         if (!mounted) return;
+        
         setList(resp.conversations || []);
         setNextCursor(resp.paging?.nextCursor || null);
       } catch (e) {
         if (!mounted) return;
+        console.error('Failed to load conversations:', e);
         setError(e.message || 'Failed to load history');
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    })();
-    return () => { mounted = false; };
-  }, []);
+    };
 
-  // Load more (cursor pagination)
-  async function onLoadMore() {
+    loadInitialConversations();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [sidebarOpen]); // Load when sidebar opens
+
+  // Load more conversations
+  const handleLoadMore = async () => {
     if (!nextCursor || loadingMore) return;
+    
     setLoadingMore(true);
     setError('');
+    
     try {
-      const resp = await fetchConversationsFromDB({ after: nextCursor, limit: 20 });
+      const resp = await fetchConversationsFromDB({ 
+        after: nextCursor, 
+        limit: 20 
+      });
+      
       setList(prev => [...prev, ...(resp.conversations || [])]);
       setNextCursor(resp.paging?.nextCursor || null);
     } catch (e) {
+      console.error('Failed to load more conversations:', e);
       setError(e.message || 'Failed to load more');
     } finally {
       setLoadingMore(false);
     }
-  }
+  };
 
-  // Delete (use parent handler if provided, else call API directly and update list)
-  async function onDelete(sessionId, e) {
+  // Delete conversation
+  const handleDelete = async (sessionId, e) => {
     e?.stopPropagation?.();
+    
     try {
       if (deleteConversation) {
+        // Use parent-provided delete function
         await deleteConversation(sessionId, e);
-        setList(prev => prev.filter(c => c.sessionId !== sessionId));
       } else {
+        // Call API directly
         await deleteConversationFromDB(sessionId);
-        setList(prev => prev.filter(c => c.sessionId !== sessionId));
       }
+      
+      // Remove from local list
+      setList(prev => prev.filter(c => c.sessionId !== sessionId));
+      
     } catch (err) {
+      console.error('Failed to delete conversation:', err);
       setError(err.message || 'Failed to delete');
     }
-  }
+  };
+
+  // Handle conversation selection
+  const handleConversationClick = (sessionId) => {
+    setShowSettings(false);
+    if (loadConversation) {
+      loadConversation(sessionId);
+    }
+  };
+
+  // Handle new conversation
+  const handleNewConversation = () => {
+    setShowSettings(false);
+    if (startNewConversation) {
+      startNewConversation();
+    }
+  };
 
   return (
     <>
-      {/* Purple-Themed Sidebar (ChatGPT Style) */}
+      {/* Purple-Themed Sidebar */}
       <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-80 bg-gradient-to-b from-purple-900/90 via-purple-800/90 to-purple-900/90 backdrop-blur-2xl border-r border-purple-300/20 transform transition-transform duration-300 ease-in-out shadow-2xl`}>
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -143,13 +218,10 @@ const Sidebar = ({
             </button>
           </div>
 
-          {/* New Generation */}
+          {/* New Generation Button */}
           <div className="p-4">
             <button
-              onClick={() => {
-                setShowSettings(false);
-                startNewConversation && startNewConversation();
-              }}
+              onClick={handleNewConversation}
               className="w-full flex items-center gap-3 p-3 text-white hover:bg-purple-800/50 rounded-lg transition-all duration-200 text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
@@ -192,8 +264,8 @@ const Sidebar = ({
                 <div>
                   <label className="block text-xs text-purple-200/70 mb-2 font-medium">Model</label>
                   <select
-                    value={imageSettings.model}
-                    onChange={(e) => setImageSettings(prev => ({ ...prev, model: e.target.value }))}
+                    value={imageSettings?.model || 'flux'}
+                    onChange={(e) => setImageSettings && setImageSettings(prev => ({ ...prev, model: e.target.value }))}
                     className="w-full p-2 bg-purple-800/50 border border-purple-300/20 rounded-lg text-white text-sm focus:border-purple-400 focus:outline-none transition-all backdrop-blur-sm"
                   >
                     <option value="flux">Flux (Recommended)</option>
@@ -206,8 +278,8 @@ const Sidebar = ({
                   <div>
                     <label className="block text-xs text-purple-200/70 mb-2 font-medium">Width</label>
                     <select
-                      value={imageSettings.width}
-                      onChange={(e) => setImageSettings(prev => ({ ...prev, width: parseInt(e.target.value) }))}
+                      value={imageSettings?.width || 512}
+                      onChange={(e) => setImageSettings && setImageSettings(prev => ({ ...prev, width: parseInt(e.target.value) }))}
                       className="w-full p-2 bg-purple-800/50 border border-purple-300/20 rounded-lg text-white text-sm focus:border-purple-400 focus:outline-none transition-all backdrop-blur-sm"
                     >
                       <option value={512}>512px</option>
@@ -218,8 +290,8 @@ const Sidebar = ({
                   <div>
                     <label className="block text-xs text-purple-200/70 mb-2 font-medium">Height</label>
                     <select
-                      value={imageSettings.height}
-                      onChange={(e) => setImageSettings(prev => ({ ...prev, height: parseInt(e.target.value) }))}
+                      value={imageSettings?.height || 512}
+                      onChange={(e) => setImageSettings && setImageSettings(prev => ({ ...prev, height: parseInt(e.target.value) }))}
                       className="w-full p-2 bg-purple-800/50 border border-purple-300/20 rounded-lg text-white text-sm focus:border-purple-400 focus:outline-none transition-all backdrop-blur-sm"
                     >
                       <option value={512}>512px</option>
@@ -234,8 +306,8 @@ const Sidebar = ({
                     <label className="text-xs text-purple-200/70 font-medium">Enhance Quality</label>
                     <input
                       type="checkbox"
-                      checked={imageSettings.enhance}
-                      onChange={(e) => setImageSettings(prev => ({ ...prev, enhance: e.target.checked }))}
+                      checked={imageSettings?.enhance || false}
+                      onChange={(e) => setImageSettings && setImageSettings(prev => ({ ...prev, enhance: e.target.checked }))}
                       className="w-4 h-4 text-purple-600 bg-purple-800/50 border-purple-300/20 rounded focus:ring-purple-500"
                     />
                   </div>
@@ -244,8 +316,8 @@ const Sidebar = ({
                     <label className="text-xs text-purple-200/70 font-medium">Safe Mode</label>
                     <input
                       type="checkbox"
-                      checked={imageSettings.safe}
-                      onChange={(e) => setImageSettings(prev => ({ ...prev, safe: e.target.checked }))}
+                      checked={imageSettings?.safe || false}
+                      onChange={(e) => setImageSettings && setImageSettings(prev => ({ ...prev, safe: e.target.checked }))}
                       className="w-4 h-4 text-purple-600 bg-purple-800/50 border-purple-300/20 rounded focus:ring-purple-500"
                     />
                   </div>
@@ -253,7 +325,7 @@ const Sidebar = ({
               </div>
             )}
 
-            {/* Errors */}
+            {/* Error Display */}
             {error && (
               <div className="mb-3 text-xs text-red-300 bg-red-900/20 border border-red-500/30 rounded p-2">
                 {error}
@@ -262,7 +334,12 @@ const Sidebar = ({
 
             {/* Conversation List */}
             <div className="space-y-2">
-              {!loading && list.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-xs text-purple-300/60">Loading conversations...</p>
+                </div>
+              ) : list.length === 0 ? (
                 <div className="text-center py-12">
                   <MessageCircle className="w-16 h-16 text-purple-300/30 mx-auto mb-4" />
                   <p className="text-sm text-purple-300/50">
@@ -280,10 +357,7 @@ const Sidebar = ({
                           ? 'bg-purple-800/40 border-purple-400/30'
                           : 'hover:bg-purple-800/30 border-transparent hover:border-purple-400/20'
                       }`}
-                      onClick={() => {
-                        setShowSettings(false);
-                        loadConversation && loadConversation(conv.sessionId);
-                      }}
+                      onClick={() => handleConversationClick(conv.sessionId)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -315,33 +389,36 @@ const Sidebar = ({
                           </div>
                         </div>
 
-                        {/* Delete */}
-                        <div
-                          className="opacity-0 group-hover:opacity-100 text-purple-300 hover:text-red-400 transition-all ml-2"
-                          onClick={(e) => onDelete(conv.sessionId, e)}
+                        {/* Delete Button */}
+                        <button
+                          className="opacity-0 group-hover:opacity-100 text-purple-300 hover:text-red-400 transition-all ml-2 p-1"
+                          onClick={(e) => handleDelete(conv.sessionId, e)}
                           title="Delete conversation"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </div>
+                        </button>
                       </div>
                     </div>
                   ))}
 
-                  {/* Load more */}
+                  {/* Load More Button */}
                   {nextCursor && (
                     <button
-                      onClick={onLoadMore}
-                      className="w-full mt-2 py-2 text-xs text-purple-200 hover:text-white hover:bg-purple-800/50 rounded-lg border border-purple-400/20 transition"
+                      onClick={handleLoadMore}
+                      className="w-full mt-2 py-2 text-xs text-purple-200 hover:text-white hover:bg-purple-800/50 rounded-lg border border-purple-400/20 transition disabled:opacity-50"
                       disabled={loadingMore}
                     >
-                      {loadingMore ? 'Loading…' : 'Load more'}
+                      {loadingMore ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></div>
+                          Loading...
+                        </div>
+                      ) : (
+                        'Load more'
+                      )}
                     </button>
                   )}
                 </>
-              )}
-
-              {loading && (
-                <div className="text-xs text-purple-300/60 py-4">Loading history…</div>
               )}
             </div>
           </div>
@@ -380,7 +457,7 @@ const Sidebar = ({
         </div>
       </div>
 
-      {/* Toggle */}
+      {/* Toggle Button */}
       {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}

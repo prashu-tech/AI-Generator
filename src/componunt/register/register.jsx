@@ -32,148 +32,158 @@ export default function RegisterPage() {
 
   const router = useRouter();
 
+  // 🔥 FIXED: Centralized URL selection function
+  const getBaseURL = () => {
+    return process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:4000'
+      : 'https://ai-generator-backend-rlc5.onrender.com';
+  };
+
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
 
+  // 1. Request OTP
+  const handleEmailSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrors({});
 
-// To this:
-// Temporary hardcoded fix for testing
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ai-generator-backend-rlc5.onrender.com';
+    const URL = getBaseURL(); // 🔥 FIXED: Use centralized function
+    const fullURL = `${URL}/api/v1/email/initiateEmailVerification`;
+    
+    console.log('🔥 Environment variables:', {
+      NODE_ENV: process.env.NODE_ENV,
+      URL: URL,
+      fullURL: fullURL
+    });
 
-// Keep your debugging
-console.log('Environment variables:', {
-  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  BACKEND_URL: BACKEND_URL
-});
+    if (!validateEmail(email)) {
+      setErrors({ email: "Please enter a valid email address" });
+      setIsLoading(false);
+      return;
+    }
 
-
-// 1. Request OTP
-const handleEmailSubmit = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setErrors({});
-
-
-   const fullURL = `${BACKEND_URL}/api/v1/email/initiateEmailVerification`;
-  console.log('Making request to:', fullURL); // Debug the full URL
-
-  if (!validateEmail(email)) {
-    setErrors({ email: "Please enter a valid email address" });
-    setIsLoading(false);
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/email/initiateEmailVerification`,
-      {
+    try {
+      console.log('🔥 Making email verification request to:', fullURL);
+      
+      const response = await fetch(fullURL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json"
         },
         body: JSON.stringify({ email }),
+      });
+
+      console.log('🔥 Email verification response status:', response.status);
+      const result = await response.json();
+      console.log('🔥 Email verification result:', result);
+
+      if (response.ok && result.success) {
+        localStorage.setItem("userEmail", email);
+        setStep(RegistrationStep.OTP_VERIFICATION);
+      } else {
+        setErrors({ email: result.message });
       }
-    );
-
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      localStorage.setItem("userEmail", email);
-      setStep(RegistrationStep.OTP_VERIFICATION);
-    } else {
-      setErrors({ email: result.message });
+    } catch (error) {
+      console.error('🔥 Email verification error:', error);
+      setErrors({ email: "Failed to send OTP" });
+    } finally {
+      setIsLoading(false);
+      setIsSendingOtp(false);
     }
-  } catch (error) {
-    setErrors({ email: "Failed to send OTP" });
-  } finally {
-    setIsLoading(false);
-    setIsSendingOtp(false);
-  }
-};
+  };
 
-// 2. Verify OTP
-const handleOtpSubmit = async (e) => {
-  e.preventDefault();
-  setIsVerifying(true);
-  setErrors({});
+  // 2. Verify OTP
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setIsVerifying(true);
+    setErrors({});
 
-  const userEmail = localStorage.getItem("userEmail");
+    const URL = getBaseURL(); // 🔥 FIXED: Use centralized function
+    const userEmail = localStorage.getItem("userEmail");
 
-  try {
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/email/verifyEmailOTP`,
-      {
+    try {
+      console.log('🔥 Making OTP verification request to:', `${URL}/api/v1/email/verifyEmailOTP`);
+      
+      const response = await fetch(`${URL}/api/v1/email/verifyEmailOTP`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json"
         },
         body: JSON.stringify({
           email: userEmail,
           otp: otp,
         }),
+      });
+
+      console.log('🔥 OTP verification response status:', response.status);
+      const result = await response.json();
+      console.log('🔥 OTP verification result:', result);
+
+      if (response.ok && result.success) {
+        console.log('🔥 OTP Verify Response:', result);
+        const tokenFromResponse = result.data.tempToken;
+        console.log('🔥 Extracted tempToken:', tokenFromResponse);
+        setTempToken(tokenFromResponse);
+        localStorage.setItem("tempToken", tokenFromResponse);
+        localStorage.setItem("userEmail", userEmail);
+        setStep(RegistrationStep.COMPLETE_PROFILE);
+      } else {
+        setErrors({ otp: result.message || "Invalid OTP" });
       }
-    );
-
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-    console.log('OTP Verify Response:', result);
-    const tokenFromResponse = result.data.tempToken;
-    console.log('Extracted tempToken:', tokenFromResponse);
-    setTempToken(tokenFromResponse); // Ensure this updates state
-    localStorage.setItem("tempToken", tokenFromResponse); // Optional: Store in localStorage for debugging
-    localStorage.setItem("userEmail", userEmail);
-    setStep(RegistrationStep.COMPLETE_PROFILE);
-    } else {
-      setErrors({ otp: result.message || "Invalid OTP" });
+    } catch (error) {
+      console.error('🔥 OTP verification error:', error);
+      setErrors({ otp: "Failed to verify OTP" });
+    } finally {
+      setIsVerifying(false);
+      setOtp("");
     }
-  } catch (error) {
-    setErrors({ otp: "Failed to verify OTP" });
-  } finally {
-    setIsVerifying(false);
-    setOtp("");
-  }
-};
+  };
 
-// 3. Complete Registration
-const handleCompleteRegistration = async (e) => {
-  e.preventDefault();
-  setErrors({});
+  // 3. Complete Registration
+  const handleCompleteRegistration = async (e) => {
+    e.preventDefault();
+    setErrors({});
 
-  if (!username) {
-    setErrors({ username: "Name is required" });
-    return;
-  }
+    if (!username) {
+      setErrors({ username: "Name is required" });
+      return;
+    }
 
-  if (password.length < 8) {
-    setErrors({ password: "Password must be at least 8 characters" });
-    return;
-  }
+    if (password.length < 8) {
+      setErrors({ password: "Password must be at least 8 characters" });
+      return;
+    }
 
-  if (password !== confirmPassword) {
-    setErrors({ confirmPassword: "Passwords do not match" });
-    return;
-  }
+    if (password !== confirmPassword) {
+      setErrors({ confirmPassword: "Passwords do not match" });
+      return;
+    }
 
-  setIsLoading(true);
+    setIsLoading(true);
 
- const tokenToSend = tempToken || localStorage.getItem("tempToken");
-if (!tokenToSend) {
-  setErrors({ general: "Missing authentication token. Please verify OTP again." });
-  setIsLoading(false);
-  return;
-}
-  try {
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/email/completeRegistration`,
-      {
+    const URL = getBaseURL(); // 🔥 FIXED: Use centralized function
+    const tokenToSend = tempToken || localStorage.getItem("tempToken");
+    
+    if (!tokenToSend) {
+      setErrors({ general: "Missing authentication token. Please verify OTP again." });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log('🔥 Making complete registration request to:', `${URL}/api/v1/email/completeRegistration`);
+      
+      const response = await fetch(`${URL}/api/v1/email/completeRegistration`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${tokenToSend}`, // Add tempToken to Authorization header
-          
+          "Accept": "application/json",
+          "Authorization": `Bearer ${tokenToSend}`,
         },
         body: JSON.stringify({
           email: localStorage.getItem("userEmail"),
@@ -181,37 +191,37 @@ if (!tokenToSend) {
           password,
           confirmPassword,
         }),
+      });
+
+      console.log('🔥 Complete registration response status:', response.status);
+      const result = await response.json();
+      console.log('🔥 Complete registration result:', result);
+
+      if (response.ok && result.success) {
+        console.log('🔥 Registration successful, redirecting to signin...');
+        
+        // 🔥 FIXED: Add delay and force redirect like in login
+        setTimeout(() => {
+          router.push("/signin");
+          // Backup redirect
+          window.location.href = "/signin";
+        }, 100);
+      } else {
+        setErrors({ general: result.message || "Registration failed" });
       }
-    );
-
-    const result = await response.json();
-
-
-    if (response.ok && result.success) {
-      router.push("/signin"); // ✅ force login after registration
-    } else {
-      setErrors({ general: result.message || "Registration failed" });
+    } catch (error) {
+      console.error('🔥 Complete registration error:', error);
+      setErrors({ general: "Registration failed. Please try again." });
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    setErrors({ general: "Registration failed. Please try again." });
-  } finally {
-    setIsLoading(false);
-  }
-
-
-};
-
-
-    
-    
-  
+  };
 
   const renderInitialStep = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-center text-gray-700">
         Register with
       </h3>
-     
 
       <div className="flex items-center mb-4">
         <div className="flex-1 border-t border-gray-300"></div>
@@ -400,7 +410,7 @@ if (!tokenToSend) {
         return renderInitialStep();
       case RegistrationStep.EMAIL_VERIFICATION:
         return renderEmailVerificationStep();
-      case RegistrationStep.OTP_VERIFICATION: // <-- Add this case
+      case RegistrationStep.OTP_VERIFICATION:
         return renderOtpVerificationStep();
       case RegistrationStep.COMPLETE_PROFILE:
         return renderCompleteProfileStep();

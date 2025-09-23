@@ -33,61 +33,100 @@ export default function ResetPasswordPage() {
     return '';
   };
 
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrors({});
+const handleResetPassword = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setErrors({});
 
-    // Validate passwords
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      setErrors({ password: passwordError });
-      setIsLoading(false);
-      return;
-    }
+  // Validate passwords
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    setErrors({ password: passwordError });
+    setIsLoading(false);
+    return;
+  }
 
-    if (password !== confirmPassword) {
-      setErrors({ confirmPassword: 'Passwords do not match' });
-      setIsLoading(false);
-      return;
-    }
+  if (password !== confirmPassword) {
+    setErrors({ confirmPassword: 'Passwords do not match' });
+    setIsLoading(false);
+    return;
+  }
 
-    try {
-      // 🔥 CONNECT TO YOUR BACKEND: Reset Password API
-      const response = await fetch(`http://localhost:4000/api/v1/authRoutes/reset-password/${token}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          password,
-          confirmPassword,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        setIsSuccess(true);
-        // Redirect to sign-in page after 3 seconds
-        setTimeout(() => {
-          router.push('/signin');
-        }, 3000);
-      } else {
-        if (response.status === 400) {
-          setErrors({ general: result.message || 'Invalid or expired reset token' });
-          setTokenValid(false);
-        } else {
-          setErrors({ general: result.message || 'Failed to reset password' });
-        }
-      }
-    } catch (error) {
-      console.error('Reset password error:', error);
-      setErrors({ general: 'Failed to reset password. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
+  // 🔥 ADD: Same URL logic as other pages
+  const getBaseURL = () => {
+    return process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:4000'
+      : 'https://ai-generator-backend-rlc5.onrender.com';
   };
+
+  const BASE_URL = getBaseURL();
+  const fullURL = `${BASE_URL}/api/v1/authRoutes/reset-password/${token}`;
+
+  console.log('🔥 Reset password request:', {
+    token: token,
+    fullURL: fullURL,
+    password: password ? 'PROVIDED' : 'EMPTY',
+    confirmPassword: confirmPassword ? 'PROVIDED' : 'EMPTY'
+  });
+
+  try {
+    const requestBody = {
+      password,
+      confirmPassword,
+    };
+
+    console.log('🔥 Request body:', requestBody);
+
+    const response = await fetch(fullURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json', // 🔥 ADD: Accept header
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('🔥 Response status:', response.status);
+    console.log('🔥 Response ok:', response.ok);
+
+    const responseText = await response.text();
+    console.log('🔥 Raw response:', responseText);
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+      console.log('🔥 Parsed result:', result);
+    } catch (parseError) {
+      console.error('🔥 JSON parse error:', parseError);
+      setErrors({ general: 'Invalid response from server' });
+      setIsLoading(false);
+      return;
+    }
+
+    if (response.ok && result.success) {
+      console.log('🔥 Password reset successful!');
+      setIsSuccess(true);
+      // Redirect to sign-in page after 3 seconds
+      setTimeout(() => {
+        router.push('/signin');
+      }, 3000);
+    } else {
+      console.log('🔥 Password reset failed:', result);
+      if (response.status === 400) {
+        setErrors({ general: result.message || 'Invalid or expired reset token' });
+        setTokenValid(false);
+      } else {
+        setErrors({ general: result.message || 'Failed to reset password' });
+      }
+    }
+  } catch (error) {
+    console.error('🔥 Reset password error:', error);
+    setErrors({ general: 'Failed to reset password. Please try again.' });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // Success screen
   if (isSuccess) {

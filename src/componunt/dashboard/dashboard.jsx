@@ -185,8 +185,16 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
   const inputRef = useRef(null);
   const recognition = useRef(null);
 
-  // Backend URL
-  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    // To this:
+// Temporary hardcoded fix for testing
+const URL = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
+
+// Keep your debugging
+console.log('Environment variables:', {
+  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  URL: URL
+});
+
 
   // 🔥 EXISTING: Sign out handler (unchanged)
   const handleSignOut = () => {
@@ -240,7 +248,7 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/v1/conversations`, {
+      const response = await fetch(`${URL}/api/v1/conversations`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -285,7 +293,7 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
 
       console.log('🔄 Loading conversation:', sessionId);
 
-      const response = await fetch(`${BACKEND_URL}/api/v1/conversations/${sessionId}`, {
+      const response = await fetch(`${URL}/api/v1/conversations/${sessionId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -329,7 +337,7 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
 
       console.log('🔄 Creating new conversation with prompt:', prompt);
 
-      const response = await fetch(`${BACKEND_URL}/api/v1/conversations/create`, {
+      const response = await fetch(`${URL}/api/v1/conversations/create`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -367,7 +375,7 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
 
       console.log('🔄 Adding message to conversation:', { sessionId, role, content: content.slice(0, 50) });
 
-      const response = await fetch(`${BACKEND_URL}/api/v1/conversations/${sessionId}/message`, {
+      const response = await fetch(`${URL}/api/v1/conversations/${sessionId}/message`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -401,7 +409,7 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
 
       console.log('🔄 Deleting conversation:', sessionId);
 
-      const response = await fetch(`${BACKEND_URL}/api/v1/conversations/${sessionId}`, {
+      const response = await fetch(`${URL}/api/v1/conversations/${sessionId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -484,9 +492,9 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
         await addMessageToConversation(sessionId, 'user', prompt);
       }
 
-      console.log('Generating image with backend:', `${BACKEND_URL}/api/v1/dashboard/generate`);
+      console.log('Generating image with backend:', `${URL}/api/v1/dashboard/generate`);
       
-      const response = await fetch(`${BACKEND_URL}/api/v1/dashboard/generate`, {
+      const response = await fetch(`${URL}/api/v1/dashboard/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
