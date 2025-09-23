@@ -185,16 +185,12 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
   const inputRef = useRef(null);
   const recognition = useRef(null);
 
-    // To this:
-// Temporary hardcoded fix for testing
-const URL = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
-
-// Keep your debugging
-console.log('Environment variables:', {
-  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  URL: URL
-});
-
+  // 🔥 FIXED: Same URL solution as all your other pages
+  const getBaseURL = () => {
+    return process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:4000'
+      : 'https://ai-generator-backend-rlc5.onrender.com';
+  };
 
   // 🔥 EXISTING: Sign out handler (unchanged)
   const handleSignOut = () => {
@@ -248,7 +244,11 @@ console.log('Environment variables:', {
         return;
       }
 
-      const response = await fetch(`${URL}/api/v1/conversations`, {
+      const BASE_URL = getBaseURL(); // 🔥 FIXED: Use getBaseURL function
+
+      console.log('🔥 Loading conversations from:', `${BASE_URL}/api/v1/conversations`);
+
+      const response = await fetch(`${BASE_URL}/api/v1/conversations`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -291,9 +291,11 @@ console.log('Environment variables:', {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
+      const BASE_URL = getBaseURL(); // 🔥 FIXED: Use getBaseURL function
+
       console.log('🔄 Loading conversation:', sessionId);
 
-      const response = await fetch(`${URL}/api/v1/conversations/${sessionId}`, {
+      const response = await fetch(`${BASE_URL}/api/v1/conversations/${sessionId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -335,9 +337,12 @@ console.log('Environment variables:', {
       const token = localStorage.getItem('accessToken');
       if (!token) return null;
 
-      console.log('🔄 Creating new conversation with prompt:', prompt);
+      const BASE_URL = getBaseURL(); // 🔥 FIXED: Use getBaseURL function
 
-      const response = await fetch(`${URL}/api/v1/conversations/create`, {
+      console.log('🔄 Creating new conversation with prompt:', prompt);
+      console.log('🔥 API URL:', `${BASE_URL}/api/v1/conversations/create`);
+
+      const response = await fetch(`${BASE_URL}/api/v1/conversations/create`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -345,6 +350,8 @@ console.log('Environment variables:', {
         },
         body: JSON.stringify({ prompt })
       });
+
+      console.log('🔥 Create conversation response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
@@ -373,9 +380,11 @@ console.log('Environment variables:', {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
+      const BASE_URL = getBaseURL(); // 🔥 FIXED: Use getBaseURL function
+
       console.log('🔄 Adding message to conversation:', { sessionId, role, content: content.slice(0, 50) });
 
-      const response = await fetch(`${URL}/api/v1/conversations/${sessionId}/message`, {
+      const response = await fetch(`${BASE_URL}/api/v1/conversations/${sessionId}/message`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -407,9 +416,11 @@ console.log('Environment variables:', {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
+      const BASE_URL = getBaseURL(); // 🔥 FIXED: Use getBaseURL function
+
       console.log('🔄 Deleting conversation:', sessionId);
 
-      const response = await fetch(`${URL}/api/v1/conversations/${sessionId}`, {
+      const response = await fetch(`${BASE_URL}/api/v1/conversations/${sessionId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -492,9 +503,12 @@ console.log('Environment variables:', {
         await addMessageToConversation(sessionId, 'user', prompt);
       }
 
-      console.log('Generating image with backend:', `${URL}/api/v1/dashboard/generate`);
+      const BASE_URL = getBaseURL(); // 🔥 FIXED: Use getBaseURL function
+      const generateURL = `${BASE_URL}/api/v1/dashboard/generate`;
+
+      console.log('🔥 Generating image with backend:', generateURL);
       
-      const response = await fetch(`${URL}/api/v1/dashboard/generate`, {
+      const response = await fetch(generateURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -572,7 +586,8 @@ console.log('Environment variables:', {
         throw new Error(data.message || 'Generation failed');
       }
     } catch (error) {
-      console.error('Generation error:', error);
+      console.error('❌ Generation error:', error);
+      console.log('🔥 Original error:', error);
       
       // 🔥 ENHANCED: User-friendly error handling
       const friendlyError = getUserFriendlyError(error);
