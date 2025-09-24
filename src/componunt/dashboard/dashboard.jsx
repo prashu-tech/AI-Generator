@@ -727,7 +727,7 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
     );
   };
 
-  return (
+ return (
     <>
       {/* 🔥 NEW: Toast Manager */}
       <ToastManager toasts={toasts} removeToast={removeToast} />
@@ -749,64 +749,71 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
           deleteConversation={deleteConversation}
         />
 
-        {/* 🔥 EXISTING: Main Content Area (unchanged) */}
+        {/* 🔥 MOBILE OPTIMIZED: Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-8">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
             {/* Display current conversation title if exists */}
             {currentSessionId && messages.length > 0 && (
-              <div className="mb-6 text-center">
-                <h2 className="text-xl text-white/80 font-medium">
+              <div className="mb-4 sm:mb-6 text-center">
+                <h2 className="text-lg sm:text-xl text-white/80 font-medium">
                   {conversations.find(c => c.sessionId === currentSessionId)?.title || 'Conversation'}
                 </h2>
               </div>
             )}
 
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center mt-20 md:mt-0">
-                {/* 🔥 EXISTING: Interactive 3D Rotating Logo (unchanged) */}
-                <Interactive3DRotatingLogo />
+              <div className="flex flex-col items-center justify-center h-full md:h-[86%] text-center px-4 sm:px-6 md:px-0 pt-33 sm:pt-20 md:mt-0">
+                {/* 🔥 MOBILE OPTIMIZED: Interactive 3D Rotating Logo */}
+                <div className="mb-4 sm:mb-6">
+                  <Interactive3DRotatingLogo />
+                </div>
                 
-                <h2 className="text-3xl font-bold text-white mb-3">Create Extraordinary Images</h2>
-                <p className="text-white/70 mb-12 max-w-md text-lg">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3 px-2">Create Extraordinary Images</h2>
+                <p className="text-white/70 mb-8 sm:mb-12 max-w-sm sm:max-w-md text-base sm:text-lg px-4">
                   Transform your imagination into stunning visuals with our advanced AI technology.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl w-full">
+                
+                {/* 🔥 MOBILE OPTIMIZED: Grid Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 max-w-sm sm:max-w-2xl md:max-w-3xl w-full px-4 sm:px-0">
                   <button
                     onClick={() => setInputText("A magical forest with glowing mushrooms and fairy lights")}
-                    className="p-6 bg-gradient-to-br from-purple-900/10 to-purple-800/10 hover:from-purple-800/20 hover:to-purple-700/20 border border-purple-300/20 rounded-2xl text-left transition-all duration-300 backdrop-blur-xl shadow-xl hover:shadow-2xl transform hover:scale-[1.02] hover:border-purple-400/30"
+                    className="p-4 sm:p-6 bg-gradient-to-br from-purple-900/10 to-purple-800/10 hover:from-purple-800/20 hover:to-purple-700/20 border border-purple-300/20 rounded-xl sm:rounded-2xl text-left transition-all duration-300 backdrop-blur-xl shadow-xl hover:shadow-2xl transform hover:scale-[1.02] hover:border-purple-400/30 active:scale-[0.98]"
                   >
-                    <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <h3 className="font-semibold text-white mb-1 sm:mb-2 flex items-center gap-2 text-sm sm:text-base">
                       🌟 Fantasy
                     </h3>
-                    <p className="text-sm text-white/70">A magical forest with glowing mushrooms</p>
+                    <p className="text-xs sm:text-sm text-white/70">A magical forest with glowing mushrooms</p>
                   </button>
+                  
                   <button
                     onClick={() => setInputText("A cyberpunk cityscape with neon lights reflecting in rain")}
-                    className="p-6 bg-gradient-to-br from-pink-900/10 to-pink-800/10 hover:from-pink-800/20 hover:to-pink-700/20 border border-pink-300/20 rounded-2xl text-left transition-all duration-300 backdrop-blur-xl shadow-xl hover:shadow-2xl transform hover:scale-[1.02] hover:border-pink-400/30"
+                    className="p-4 sm:p-6 bg-gradient-to-br from-pink-900/10 to-pink-800/10 hover:from-pink-800/20 hover:to-pink-700/20 border border-pink-300/20 rounded-xl sm:rounded-2xl text-left transition-all duration-300 backdrop-blur-xl shadow-xl hover:shadow-2xl transform hover:scale-[1.02] hover:border-pink-400/30 active:scale-[0.98]"
                   >
-                    <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <h3 className="font-semibold text-white mb-1 sm:mb-2 flex items-center gap-2 text-sm sm:text-base">
                       🏙️ Cyberpunk
                     </h3>
-                    <p className="text-sm text-white/70">A cyberpunk cityscape with neon lights</p>
+                    <p className="text-xs sm:text-sm text-white/70">A cyberpunk cityscape with neon lights</p>
                   </button>
+                  
                   <button
                     onClick={() => setInputText("A serene mountain lake at sunrise with mist")}
-                    className="p-6 bg-gradient-to-br from-blue-900/10 to-blue-800/10 hover:from-blue-800/20 hover:to-blue-700/20 border border-blue-300/20 rounded-2xl text-left transition-all duration-300 backdrop-blur-xl shadow-xl hover:shadow-2xl transform hover:scale-[1.02] hover:border-blue-400/30"
+                    className="p-4 sm:p-6 bg-gradient-to-br from-blue-900/10 to-blue-800/10 hover:from-blue-800/20 hover:to-blue-700/20 border border-blue-300/20 rounded-xl sm:rounded-2xl text-left transition-all duration-300 backdrop-blur-xl shadow-xl hover:shadow-2xl transform hover:scale-[1.02] hover:border-blue-400/30 active:scale-[0.98]"
                   >
-                    <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <h3 className="font-semibold text-white mb-1 sm:mb-2 flex items-center gap-2 text-sm sm:text-base">
                       🏔️ Nature
                     </h3>
-                    <p className="text-sm text-white/70">A serene mountain lake at sunrise</p>
+                    <p className="text-xs sm:text-sm text-white/70">A serene mountain lake at sunrise</p>
                   </button>
+                  
                   <button
                     onClick={() => setInputText("An abstract geometric pattern with vibrant colors")}
-                    className="p-6 bg-gradient-to-br from-green-900/10 to-green-800/10 hover:from-green-800/20 hover:to-green-700/20 border border-green-300/20 rounded-2xl text-left transition-all duration-300 backdrop-blur-xl shadow-xl hover:shadow-2xl transform hover:scale-[1.02] hover:border-green-400/30"
+                    className="p-4 sm:p-6 bg-gradient-to-br from-green-900/10 to-green-800/10 hover:from-green-800/20 hover:to-green-700/20 border border-green-300/20 rounded-xl sm:rounded-2xl text-left transition-all duration-300 backdrop-blur-xl shadow-xl hover:shadow-2xl transform hover:scale-[1.02] hover:border-green-400/30 active:scale-[0.98]"
                   >
-                    <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <h3 className="font-semibold text-white mb-1 sm:mb-2 flex items-center gap-2 text-sm sm:text-base">
                       🎨 Abstract
                     </h3>
-                    <p className="text-sm text-white/70">An abstract geometric pattern</p>
+                    <p className="text-xs sm:text-sm text-white/70">An abstract geometric pattern</p>
                   </button>
                 </div>
               </div>
@@ -816,22 +823,22 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
                   <MessageBubble key={message.id} message={message} />
                 ))}
                 {isGenerating && (
-                  <div className="flex justify-start mb-8">
+                  <div className="flex justify-start mb-6 sm:mb-8">
                     <div className="max-w-4xl w-full">
-                      <div className="flex items-center mb-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 rounded-full flex items-center justify-center mr-3 shadow-lg">
-                          <Sparkles className="w-5 h-5 text-white animate-spin" />
+                      <div className="flex items-center mb-2 sm:mb-3">
+                        <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 rounded-full flex items-center justify-center mr-2 sm:mr-3 shadow-lg">
+                          <Sparkles className="w-4 sm:w-5 h-4 sm:h-5 text-white animate-spin" />
                         </div>
-                        <span className="text-white/90 text-sm font-medium">AI Image Generator</span>
+                        <span className="text-white/90 text-xs sm:text-sm font-medium">AI Image Generator</span>
                       </div>
-                      <div className="bg-gradient-to-br from-purple-900/10 via-purple-800/10 to-pink-900/10 border border-purple-300/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
-                        <div className="flex items-center gap-4">
+                      <div className="bg-gradient-to-br from-purple-900/10 via-purple-800/10 to-pink-900/10 border border-purple-300/20 rounded-2xl sm:rounded-3xl p-4 sm:p-6 backdrop-blur-xl shadow-2xl">
+                        <div className="flex items-center gap-3 sm:gap-4">
                           <div className="flex gap-1">
-                            <div className="w-3 h-3 bg-purple-400 rounded-full animate-bounce"></div>
-                            <div className="w-3 h-3 bg-pink-400 rounded-full animate-bounce delay-100"></div>
-                            <div className="w-3 h-3 bg-purple-400 rounded-full animate-bounce delay-200"></div>
+                            <div className="w-2 sm:w-3 h-2 sm:h-3 bg-purple-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 sm:w-3 h-2 sm:h-3 bg-pink-400 rounded-full animate-bounce delay-100"></div>
+                            <div className="w-2 sm:w-3 h-2 sm:h-3 bg-purple-400 rounded-full animate-bounce delay-200"></div>
                           </div>
-                          <span className="text-white/90 font-medium">Creating your masterpiece...</span>
+                          <span className="text-white/90 font-medium text-sm sm:text-base">Creating your masterpiece...</span>
                         </div>
                       </div>
                     </div>
@@ -842,19 +849,19 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
             )}
           </div>
 
-          {/* 🔥 EXISTING: Input Area (unchanged) */}
-          <div className="border-t border-purple-300/10 p-6 bg-gradient-to-r from-purple-800/5 via-purple-700/10 to-pink-800/5">
+          {/* 🔥 MOBILE OPTIMIZED: Input Area */}
+          <div className="border-t border-purple-300/10 p-3 sm:p-4 md:p-6 bg-gradient-to-r from-purple-800/5 via-purple-700/10 to-pink-800/5 safe-area-inset-bottom">
             <form onSubmit={handleSubmit} className="max-w-5xl mx-auto">
-              <div className="flex items-end gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <div className="flex-1 relative">
                   <textarea
                     ref={inputRef}
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder="Describe the image you want to create..."
-                    className="w-full p-5 bg-white/5 border border-purple-300/20 rounded-2xl text-white placeholder-white/40 resize-none focus:outline-none focus:ring-2 focus:ring-purple-400/40 focus:border-transparent backdrop-blur-xl shadow-xl transition-all font-medium"
+                    className="w-full p-3 sm:p-4 md:p-5 bg-white/5 border border-purple-300/20 rounded-xl sm:rounded-2xl text-white placeholder-white/40 resize-none focus:outline-none focus:ring-2 focus:ring-purple-400/40 focus:border-transparent backdrop-blur-xl shadow-xl transition-all font-medium text-sm sm:text-base"
                     rows="1"
-                    style={{ minHeight: '60px', maxHeight: '200px' }}
+                    style={{ minHeight: '50px', maxHeight: '150px' }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -863,29 +870,34 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
                     }}
                   />
                 </div>
+                
                 <button
                   type="button"
                   onClick={handleVoiceInput}
-                  className={`p-4 rounded-2xl border transition-all duration-200 backdrop-blur-sm shadow-xl transform hover:scale-105 ${
+                  className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-200 backdrop-blur-sm shadow-xl transform active:scale-95 sm:hover:scale-105 ${
                     isListening 
                       ? 'bg-red-600/80 border-red-400/40 text-white shadow-red-500/20' 
                       : 'bg-white/5 border-purple-300/20 text-purple-200 hover:bg-white/10 hover:border-purple-300/30'
                   }`}
                   title={isListening ? 'Stop listening' : 'Voice input'}
                 >
-                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                  {isListening ? <MicOff className="w-4 sm:w-5 h-4 sm:h-5" /> : <Mic className="w-4 sm:w-5 h-4 sm:h-5" />}
                 </button>
+                
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isGenerating}
-                  className="p-4 bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-500/90 hover:to-pink-500/90 disabled:from-purple-800/40 disabled:to-purple-800/40 disabled:cursor-not-allowed text-white rounded-2xl transition-all duration-200 shadow-xl backdrop-blur-sm transform hover:scale-105 disabled:transform-none border border-purple-400/20"
+                  className="p-3 sm:p-4 bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-500/90 hover:to-pink-500/90 disabled:from-purple-800/40 disabled:to-purple-800/40 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl transition-all duration-200 shadow-xl backdrop-blur-sm transform active:scale-95 sm:hover:scale-105 disabled:transform-none border border-purple-400/20"
                   title="Generate image"
                 >
-                  <Send className="w-5 h-5" />
+                  <Send className="w-4 sm:w-5 h-4 sm:h-5" />
                 </button>
               </div>
-              <div className="mt-3 text-xs text-white/50 text-center font-medium">
-                Press Enter to send • Shift + Enter for new line • Use voice for hands-free input
+              
+              {/* 🔥 MOBILE OPTIMIZED: Help text */}
+              <div className="mt-2 sm:mt-3 text-xs text-white/50 text-center font-medium px-2">
+                <span className="hidden sm:inline">Press Enter to send • Shift + Enter for new line • Use voice for hands-free input</span>
+                <span className="sm:hidden">Tap to send • Use voice for hands-free input</span>
               </div>
             </form>
           </div>
@@ -893,6 +905,7 @@ const Dashboard = ({ user, setUser, activeTab, setActiveTab }) => {
       </div>
     </>
   );  
+
 };
 
 export default Dashboard;
